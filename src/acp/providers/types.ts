@@ -10,6 +10,8 @@ export interface CliProvider {
   capabilities: Record<string, any>;
   /** CLI flag to select an agent (e.g. "--agent"). If absent, agent selection via CLI is not supported. */
   agentFlag?: string;
+  /** Whether AcpClient should inject the hive-acp MCP server into `newSession`. Defaults to true; set false when the provider already wires it itself (e.g. Kiro via its agent JSON config). */
+  injectMcpBridge?: boolean;
   /** Map a vendor-specific extension notification to a session update, or null to ignore. */
   mapExtNotification?(method: string, params: Record<string, any>): Record<string, any> | null;
   /** Clean/shorten a tool title for display (e.g. strip paths, truncate). */

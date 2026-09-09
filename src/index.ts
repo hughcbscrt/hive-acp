@@ -19,6 +19,7 @@ import { AcpPool } from "./acp/pool.js";
 import { ProviderRegistry } from "./acp/registry.js";
 import { kiroProvider } from "./acp/providers/kiro.js";
 import { opencodeProvider } from "./acp/providers/opencode.js";
+import { claudeProvider } from "./acp/providers/claude.js";
 import { TelegramAdapter } from "./adapters/chat/telegram/adapter.js";
 import { createTelegramTools } from "./adapters/chat/telegram/tools.js";
 import { createContextTools } from "./adapters/context/tools.js";
@@ -33,7 +34,7 @@ import { JobManager } from "./orchestration/job-manager.js";
 import { createOrchestrationTools } from "./orchestration/tools.js";
 import { buildOrchestratorContext } from "./orchestration/context.js";
 import { log } from "./utils/logger.js";
-import { bootstrap, HIVE_HOME } from "./utils/paths.js";
+import { bootstrap, HIVE_HOME, MCP_PORT } from "./utils/paths.js";
 import { pkg } from "./utils/pkg.js";
 
 const TOKEN = process.env.HIVE_TELEGRAM_TOKEN;
@@ -42,7 +43,6 @@ if (!TOKEN) {
   process.exit(1);
 }
 
-const MCP_PORT = parseInt(process.env.HIVE_MCP_PORT || "4040", 10);
 const WORKSPACE = process.env.HIVE_WORKSPACE || process.cwd();
 
 /** Build the provider registry: register providers and discover agents. */
@@ -52,6 +52,7 @@ function buildRegistry(): ProviderRegistry {
   // Register available providers
   registry.addProvider("kiro", kiroProvider());
   registry.addProvider("opencode", opencodeProvider());
+  registry.addProvider("claude", claudeProvider());
 
   // Load all agents from ~/.hive-acp/agents.json (single source of truth)
   const agentsFile = path.join(HIVE_HOME, "agents.json");
@@ -65,8 +66,11 @@ function buildRegistry(): ProviderRegistry {
       for (const a of agents) {
         // For providers without agentFlag, load instructions from the agent file
         let instructions: string | undefined;
-        if (a.provider === "opencode") {
-          const mdPath = path.join(os.homedir(), ".config", "opencode", "agents", `${a.name}.md`);
+        if (a.provider === "opencode" || a.provider === "claude") {
+          const agentsDir = a.provider === "opencode"
+            ? path.join(os.homedir(), ".config", "opencode", "agents")
+            : path.join(os.homedir(), ".config", "claude", "agents");
+          const mdPath = path.join(agentsDir, `${a.name}.md`);
           if (fs.existsSync(mdPath)) {
             const raw = fs.readFileSync(mdPath, "utf-8");
             // Strip YAML frontmatter, keep only the prompt body

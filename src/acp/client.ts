@@ -13,6 +13,7 @@ import * as acp from "@agentclientprotocol/sdk";
 import { log } from "../utils/logger.js";
 import { TypedEmitter } from "../utils/typed-emitter.js";
 import { pkg } from "../utils/pkg.js";
+import { BRIDGE_PATH, MCP_PORT } from "../utils/paths.js";
 import type { CliProvider } from "./providers/types.js";
 
 const WORKSPACE = process.env.HIVE_WORKSPACE || process.cwd();
@@ -93,7 +94,17 @@ export class AcpClient extends TypedEmitter<AcpEvents> {
     });
     log.acp.info({ server: init.agentInfo?.name, serverVersion: init.agentInfo?.version }, "initialized");
 
-    const session = await this.conn.newSession({ cwd: WORKSPACE, mcpServers: [] });
+    const session = await this.conn.newSession({
+      cwd: WORKSPACE,
+      mcpServers: this.provider.injectMcpBridge === false ? [] : [
+        {
+          name: "hive-acp",
+          command: "node",
+          args: [BRIDGE_PATH],
+          env: [{ name: "MCP_URL", value: `ws://localhost:${MCP_PORT}/mcp` }],
+        },
+      ],
+    });
     this.sessionId = session.sessionId;
     log.acp.info({ sessionId: this.sessionId }, "session created");
 

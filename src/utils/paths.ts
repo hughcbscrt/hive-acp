@@ -12,6 +12,12 @@ export const HIVE_TRIPLES_PATH = path.join(HIVE_STATE_DIR, "triples.json");
 export const HIVE_SUMMARIES_DIR = path.join(HIVE_STATE_DIR, "summaries");
 export const HIVE_SKILLS_DIR = path.join(HIVE_HOME, "skills");
 
+/** WebSocket MCP server port, shared by the server (src/index.ts) and every ACP client bridge. */
+export const MCP_PORT = parseInt(process.env.HIVE_MCP_PORT || "4040", 10);
+
+/** Path to the built MCP bridge script, spawned as a subprocess by ACP-compatible agent CLIs. */
+export const BRIDGE_PATH = path.join(import.meta.dirname, "..", "..", "dist", "mcp", "bridge.js");
+
 const BUILTIN_SKILLS_DIR = path.join(import.meta.dirname, "..", "skills");
 
 /** Create ~/.hive-acp/ structure and install built-in skills. */

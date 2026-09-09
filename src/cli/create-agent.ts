@@ -11,13 +11,14 @@ import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 import readline from "node:readline/promises";
+import { BRIDGE_PATH } from "../utils/paths.js";
 
 const HIVE_HOME = path.join(os.homedir(), ".hive-acp");
 const HIVE_SKILLS_DIR = path.join(HIVE_HOME, "skills");
 const AGENTS_DB = path.join(HIVE_HOME, "agents.json");
 const KIRO_AGENTS_DIR = path.join(os.homedir(), ".kiro", "agents");
 const OPENCODE_AGENTS_DIR = path.join(os.homedir(), ".config", "opencode", "agents");
-const BRIDGE_PATH = path.join(import.meta.dirname, "..", "..", "dist", "mcp", "bridge.js");
+const CLAUDE_AGENTS_DIR = path.join(os.homedir(), ".config", "claude", "agents");
 
 interface AgentRecord {
   name: string;
@@ -132,6 +133,34 @@ FORMATO:
   return filePath;
 }
 
+function createClaudeAgent(name: string, description: string, prompt: string, _skills: string[]): string {
+  const md = `---
+description: ${description}
+---
+
+${prompt}
+
+FORMATO:
+- Respondes vía Telegram. Usa *bold* (un solo asterisco) para títulos, bullets para listas, emojis para legibilidad. No uses headers (#), tablas, ni HTML.
+`;
+
+  fs.mkdirSync(CLAUDE_AGENTS_DIR, { recursive: true });
+  const filePath = path.join(CLAUDE_AGENTS_DIR, `${name}.md`);
+  fs.writeFileSync(filePath, md, "utf-8");
+  return filePath;
+}
+
+/** Per-provider agent-file creation and whether it needs an entry in ~/.hive-acp/agents.json
+ *  (Kiro agents are self-describing JSON files, auto-discovered from ~/.kiro/agents/ instead). */
+const PROVIDERS: Record<string, {
+  create: (name: string, description: string, prompt: string, skills: string[]) => string;
+  register: boolean;
+}> = {
+  kiro: { create: createKiroAgent, register: false },
+  opencode: { create: createOpencodeAgent, register: true },
+  claude: { create: createClaudeAgent, register: true },
+};
+
 async function main(): Promise<void> {
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 
@@ -148,13 +177,12 @@ async function main(): Promise<void> {
   if (!prompt) { console.log("❌ Prompt is required."); rl.close(); return; }
 
   const skills = await askSkills(rl);
-  const provider = await askChoice(rl, "Which provider?", ["kiro", "opencode"]);
+  const provider = await askChoice(rl, "Which provider?", Object.keys(PROVIDERS));
 
-  const filePath = provider === "kiro"
-    ? createKiroAgent(name, description, prompt, skills)
-    : createOpencodeAgent(name, description, prompt, skills);
+  const handler = PROVIDERS[provider];
+  const filePath = handler.create(name, description, prompt, skills);
 
-  if (provider === "opencode") {
+  if (handler.register) {
     const db = loadDb().filter((a) => a.name !== name);
     db.push({ name, provider, description });
     saveDb(db);
@@ -164,7 +192,7 @@ async function main(): Promise<void> {
   console.log(`   File:      ${filePath}`);
   console.log(`   Provider:  ${provider}`);
   console.log(`   Skills:    ${skills.length > 0 ? skills.join(", ") : "none"}`);
-  if (provider === "opencode") {
+  if (handler.register) {
     console.log(`   Registry:  ${AGENTS_DB}`);
   }
 

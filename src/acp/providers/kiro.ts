@@ -34,6 +34,10 @@ export function kiroProvider(): CliProvider {
     env: { KIRO_LOG_LEVEL: "error" },
     capabilities: { fs: { readTextFile: true, writeTextFile: true }, terminal: true },
     agentFlag: "--agent",
+    // Kiro agents declare their own "hive-acp" MCP server in ~/.kiro/agents/<name>.json
+    // (see createKiroAgent in src/cli/create-agent.ts) — injecting it again here would
+    // register the same server twice under the same name.
+    injectMcpBridge: false,
     cleanToolTitle,
     mapExtNotification(method, params) {
       if (method === "_kiro.dev/session/update") return params.update ?? null;

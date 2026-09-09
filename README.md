@@ -53,7 +53,7 @@ graph LR
 
 ## Features
 
-- **Multi-provider** — mix Kiro and OpenCode agents in the same workflow
+- **Multi-provider** — mix Kiro, OpenCode, and Claude Code agents in the same workflow
 - **Multi-agent orchestration** — dispatch tasks to subagents in parallel with real-time progress
 - **Context persistence** — conversation summaries saved to disk on eviction, restored on reconnect
 - **Knowledge graph** — SPO triples extracted from conversations, persisted across sessions
@@ -70,7 +70,7 @@ On first run, hive-acp creates `~/.hive-acp/` as its central home:
 
 ```
 ~/.hive-acp/
-├── agents.json                 # OpenCode agent registry (auto + manual)
+├── agents.json                 # OpenCode / Claude agent registry (auto + manual)
 ├── skills/                     # Agent skills (auto-installed from built-ins)
 │   └── telegram-formatting/
 │       └── SKILL.md
@@ -131,7 +131,7 @@ On first run, hive-acp creates `~/.hive-acp/` as its central home:
 ### Prerequisites
 
 - Node.js 20+
-- An ACP-compatible CLI agent installed (Kiro and/or OpenCode)
+- An ACP-compatible CLI agent installed (Kiro, OpenCode, and/or Claude Code)
 - A Telegram bot token from [@BotFather](https://t.me/BotFather)
 
 ### Installation
@@ -162,7 +162,7 @@ Edit `.env` with your values:
 
 | Variable | Required | Description |
 |---|---|---|
-| `HIVE_PROVIDER` | | Main chat provider: `kiro`, `opencode` (default: `kiro`) |
+| `HIVE_PROVIDER` | | Main chat provider: `kiro`, `opencode`, `claude` (default: `kiro`) |
 
 #### Kiro
 
@@ -178,6 +178,14 @@ Edit `.env` with your values:
 | `HIVE_OPENCODE_CLI_PATH` | | Absolute path to `opencode` binary (default: `opencode` in PATH) |
 
 > OpenCode also needs its provider API key configured. See [OpenCode docs](https://docs.opencode.ai/docs/config/) for details.
+
+#### Claude
+
+| Variable | Required | Description |
+|---|---|---|
+| `HIVE_CLAUDE_CLI_PATH` | | Absolute path to `claude-code-acp` binary (default: `claude-code-acp` in PATH) |
+
+> Install the ACP bridge with `npm install -g @zed-industries/claude-code-acp`, and set `ANTHROPIC_API_KEY` in your environment.
 
 #### Telegram
 
@@ -198,9 +206,10 @@ Edit `.env` with your values:
 npm run create-agent
 ```
 
-Interactive CLI that creates agents for either provider:
+Interactive CLI that creates agents for any provider:
 - **Kiro** → JSON in `~/.kiro/agents/<name>.json`
 - **OpenCode** → Markdown in `~/.config/opencode/agents/<name>.md` + registered in `~/.hive-acp/agents.json`
+- **Claude** → Markdown in `~/.config/claude/agents/<name>.md` + registered in `~/.hive-acp/agents.json`
 
 ### Running
 
@@ -225,7 +234,8 @@ src/
 │   └── providers/
 │       ├── types.ts                  # CliProvider / ResponseParser interfaces
 │       ├── kiro.ts                   # Kiro CLI provider
-│       └── opencode.ts              # OpenCode CLI provider
+│       ├── opencode.ts              # OpenCode CLI provider
+│       └── claude.ts                # Claude Code CLI provider
 ├── adapters/
 │   ├── chat/
 │   │   ├── types.ts                  # ChatAdapter interface
