@@ -137,7 +137,7 @@ On first run, hive-acp creates `~/.hive-acp/` as its central home:
 ### Installation
 
 ```bash
-git clone git@github.com:gouh/hive-acp.git
+git clone git@github.com:hughcbscrt/hive-acp.git
 cd hive-acp
 npm install
 ```
@@ -294,6 +294,7 @@ interface CliProvider {
   env?: Record<string, string>;
   capabilities: Record<string, any>;
   agentFlag?: string; // CLI flag to select agent (e.g. "--agent")
+  injectMcpBridge?: boolean; // set false if the provider wires the MCP bridge itself
 }
 ```
 
@@ -320,4 +321,3 @@ interface ChatAdapter {
 ## License
 
 MIT
-.
